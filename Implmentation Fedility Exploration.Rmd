@@ -1,0 +1,449 @@
+---
+title: "IES Data Exporation"
+author: "Kirk Vanacore"
+date: "9/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r, include=FALSE}
+
+require(psych)
+require(ggplot2)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(lme4)
+```
+
+# IES Assessment Data
+
+```{r}
+assess <-read.csv("Assessment_merged_2021_07_16_state_assessment_N=4321 - Sheet1.csv", na.strings = c("", "N/A"))
+colnames(assess)
+
+# Build Analytic Sample 
+  # schools who did not implement: S03 (for dropping before completing the pre-test) and S07 
+  # 
+table(assess$initial_school_id)
+table(assess$final_school_id)
+
+length(unique(assess$student_id)) # 4193
+table(is.na(assess$rdm_condition)) # 4092 original assigned to random treatment group
+table((assess$rdm_condition)) # 120 in resource 
+levels((assess$rdm_condition)) # 120 in resource 
+
+
+
+
+assess_clean <- assess %>%
+  filter(
+    # remove students who are not in original random assignment
+    is.na(assess$rdm_condition) == F   
+    # remove students who are in resource
+    & assess$rdm_condition != "Dragon-Resource" & assess$rdm_condition != "FH2T-Resource"   
+    # S03 drop schools 
+    & final_school_id != "S03" & initial_school_id != "S03"
+    & final_school_id != "S07" & initial_school_id != "S07"
+
+  )
+assess <- assess_clean
+rm(assess_clean)
+```
+
+## Basic Descriptives
+
+How many students are there?
+```{r}
+length(unique(assess$student_id)) 
+table(duplicated(assess$student_id)) 
+table(is.na(assess$student_id)) 
+length(unique(assess$student_number)) 
+
+
+```
+
+
+## Fedility Metrics Across Programs
+
+**Variables to explore:**
+* fidelity_started_sum
+* fidelity_complete_sum        
+* fidelity_complete_percent
+
+**Note: fidelity_... variables are missing from the data dictionary**
+
+### fidelity_started_sum
+NEED TO FIND DEF -> number of started activities, maybe?
+
+```{r}
+
+### fidelity_started_sum ###
+class(assess$fidelity_started_sum)
+table(is.na(assess$fidelity_started_sum)) # 828 missing values
+table(assess$fidelity_started_sum)
+describe(assess$fidelity_started_sum)
+
+# group differences in fidelity_started_sum
+
+# density plot by group
+ggplot(
+  data = assess,
+  aes(x = fidelity_started_sum,
+      group = condition_assignment,
+      fill = condition_assignment)
+) +
+  geom_density(adjust = 1.5, alpha = .4)
+
+
+describe.by(assess$fidelity_started_sum,
+            assess$condition_assignment)
+summary(aov(fidelity_started_sum ~
+              condition_assignment, data = assess))
+TukeyHSD((
+  aov(fidelity_started_sum ~
+        condition_assignment, data = assess)
+))
+
+ggplot(
+  assess,
+  aes(x = fidelity_started_sum, y = condition_assignment, fill = condition_assignment)
+) +
+  geom_boxplot()
+
+```
+
+#### Notes:
+* a lot of missing data (almost 20%)
+* alot of variability
+* bimodal/neg skew across conditions
+* Daagonbox is sig lower than all conditions 
+  * not this is not true when taking into account the bonf corrected p value (.0125)
+
+
+
+### fidelity_complete_sum
+NEED TO FIND DEF -> number of completed activities
+
+```{r}
+
+### fidelity_complete_sum ###
+class(assess$fidelity_complete_sum)
+table(is.na(assess$fidelity_complete_sum)) # 828 missing values
+table(assess$fidelity_complete_sum)
+describe(assess$fidelity_complete_sum)
+
+# group differences in fidelity_complete_sum
+
+describeBy(assess$fidelity_complete_sum, assess$final_school_id)
+describeBy(assess$fidelity_complete_sum, assess$condition_assignment)
+
+
+# denisity plot by group
+ggplot(
+  data = assess,
+  aes(x = fidelity_complete_sum,
+      group = condition_assignment,
+      fill = condition_assignment)
+) +
+  geom_density(adjust = 1.5, alpha = .4)
+
+
+describe.by(assess$fidelity_complete_sum,
+            assess$condition_assignment)
+summary(aov(fidelity_complete_sum ~
+              condition_assignment, data = assess))
+TukeyHSD((
+  aov(fidelity_complete_sum ~
+        condition_assignment, data = assess)
+))
+
+ggplot(
+  assess,
+  aes(x = fidelity_complete_sum, y = condition_assignment, fill = condition_assignment)
+) +
+  geom_boxplot()
+
+```
+
+#### Notes:
+* a lot of missing data (almost 20%)
+  * open question: are these students who had no compliance?
+* There is great variability in fidelity_complete_sum
+* distributions are bimodal suggesting two groups: high and low fertility
+* Group Differences:
+  * Dragonbox is significant lower from all conditions
+  * see anova and tukey post hoc tests
+  
+
+### fidelity_started_sum X fidelity_complete_sum
+
+```{r}
+cor.test(
+  assess$fidelity_started_sum,
+  assess$fidelity_complete_sum
+) 
+#highly correlated
+
+
+
+# average number of started assignments that were not completed
+assess$fidelity_incomplete_sum <- assess$fidelity_started_sum - assess$fidelity_complete_sum
+mean(assess$fidelity_incomplete_sum, na.rm = T)
+
+
+# denisity plot by group
+ggplot(
+  data = assess,
+  aes(x = fidelity_incomplete_sum,
+      group = condition_assignment,
+      fill = condition_assignment)
+) +
+  geom_density(adjust = 1.5, alpha = .4)
+
+# small positive correlation between number stated and the number incomplete 
+# the more the students started, the more they were likely to have incomplete
+cor.test(
+  assess$fidelity_started_sum,
+  assess$fidelity_incomplete_sum
+) 
+
+# small negative correlation between number stated and the number incomplete 
+# the more the students completed, the fewer they were likely to have incomplete
+cor.test(
+  assess$fidelity_complete_sum,
+  assess$fidelity_incomplete_sum
+) 
+
+```
+#### Notes:
+* metrics are highly corrected (not surprising)
+* on average, students did not complete about  
+ 
+ 
+  ### fidelity_started_sum
+NEED TO FIND DEF -> number of started activities, maybe?
+
+```{r}
+
+### fidelity_started_sum ###
+class(assess$fidelity_started_sum)
+table(is.na(assess$fidelity_started_sum)) # 828 missing values
+table(assess$fidelity_started_sum)
+describe(assess$fidelity_started_sum)
+
+# group differences in fidelity_started_sum
+
+# density plot by group
+ggplot(
+  data = assess,
+  aes(x = fidelity_started_sum,
+      group = condition_assignment,
+      fill = condition_assignment)
+) +
+  geom_density(adjust = 1.5, alpha = .4)
+
+
+describe.by(assess$fidelity_started_sum,
+            assess$condition_assignment)
+summary(aov(fidelity_started_sum ~
+              condition_assignment, data = assess))
+TukeyHSD((
+  aov(fidelity_started_sum ~
+        condition_assignment, data = assess)
+))
+
+ggplot(
+  assess,
+  aes(x = fidelity_started_sum, y = condition_assignment, fill = condition_assignment)
+) +
+  geom_boxplot()
+
+```
+
+
+
+## Do schools/class differ in terms of implemntation?
+
+### Schools 
+
+```{r}
+
+# how many schools?
+length(unique(assess$final_school_id))
+table(is.na(assess$final_school_id)) # 135 have missing school ids
+
+table((assess$final_school_id))
+
+# school changes
+table((assess$initial_school_id == assess$final_school_id)) ## 551 students moved school (this does not seem to include missing school ids)
+table((assess$initial_school_id == assess$final_school_id))/length(assess$final_school_id) ## 12.8% students moved school
+#will we have to deal with cross classification?
+
+describe.by(assess$fidelity_complete_sum, 
+            assess$final_school_id
+            )
+
+### Variance in fertility by school
+ggplot(
+  assess[is.na(assess$final_school_id) == F, ],
+  aes(x = final_school_id, 
+      y = fidelity_complete_sum)
+) +
+  geom_boxplot(alpha = .7, fill = "gray") +
+  theme_minimal()
+
+# IntraClass Correlation
+null_model <- lmer(
+  fidelity_complete_sum ~ 1 +
+  (1|final_school_id),
+  data = assess
+  
+)
+summary(null_model)
+# ICC 0.3604234
+
+### Variance in fertility by school and condition
+ggplot(
+  assess[is.na(assess$final_school_id) == F, ],
+  aes(x = final_school_id, 
+      y = fidelity_complete_sum, 
+      fill = condition_assignment)
+) +
+  geom_boxplot(alpha = .7) +
+  theme_minimal()
+
+# IntraClass Correlation
+model_1 <- lmer(
+  fidelity_complete_sum ~ 1 
+  + condition_assignment +
+  (1|final_school_id),
+  data = assess
+  
+)
+summary(model_1)
+# ICC 0.364627 
+# not a decrease, so school is a much bigger factor in fidelity than condition
+
+### Variance in fertility by school and implementation model (remote/in-person/) 
+table(assess$movement)
+# coding all 
+
+ggplot(
+  assess[is.na(assess$final_school_id) == F, ],
+  aes(x = final_school_id, 
+      y = fidelity_complete_sum, 
+      fill = movement)
+) +
+  geom_boxplot(alpha = .7) +
+  theme_minimal()
+
+# Intraclass Correlation
+model_2 <- lmer(
+  fidelity_complete_sum ~ 1 
+  + movement +
+  (1|final_school_id),
+  data = assess
+  
+)
+summary(model_2)
+# ICC 0.3923657
+# not a decrease, so school is a much bigger factor in fidelity than implemntation type
+
+
+
+```
+### Teacher/Class
+```{r}
+
+# how many teachers/classes?
+length(unique(assess$final_teacher_id))
+length(unique(assess$final_teacher_class))
+table(is.na(assess$final_teacher_class)) # 208
+
+ggplot(
+  assess[is.na(assess$final_school_id) == F, ],
+  aes(x = final_teacher_class, 
+      y = fidelity_complete_sum,
+      fill = final_school_id,
+      color = final_school_id
+  )) +
+  geom_boxplot(alpha = .7)
+
+null_model2 <- lmer(
+  fidelity_complete_sum ~ 1 
+  + (1|final_school_id/final_teacher_class),
+  data = assess
+  
+)
+summary(null_model2)
+
+# ICC 
+# 0.288 teacher/school
+# 0.3194 school
+
+
+
+```
+
+
+## Attendence
+
+
+Relavant Variables
+* MEMBERSHIPDAYS6	AbsentDays + PresentDays
+* A DM6 ->	MembershipDays / 178
+* ADA6 ->	PresentDays / 178
+* Absencesavg.Daily6 ->	UnexcusedDays / 179
+* PercentInAttendance6 ->	PresentDays / MembershipDays
+* Absencesavg.Daily5
+* PercentInAttendance5
+* AbsentDays6
+* PresentDays6
+* MEMBERSHIPDAYS6	AbsentDays + PresentDays
+* A DM6 ->	MembershipDays / 178
+* ADA6 ->	PresentDays / 178
+* Absencesavg.Daily6 ->	UnexcusedDays / 179
+* PercentInAttendance6 ->	PresentDays / MembershipDays
+
+```{r}
+describe(assess$PercentInAttendance5)
+describe(assess$PercentInAttendance6)
+
+
+# denisity plot by condition
+ggplot(
+  data = assess,
+  aes(x = PercentInAttendance6,
+      group = condition_assignment,
+      fill = condition_assignment)
+) +
+  geom_density(adjust = 1.5, alpha = .4)
+
+
+# denisity plot by group
+ggplot(
+  data = assess,
+  aes(x = PercentInAttendance6,
+      group = condition_assignment,
+      fill = condition_assignment)
+) +
+  geom_density(adjust = 1.5, alpha = .4)
+
+```
+
+## Questions:
+ * Is there a variable for the students grade during the study?
+ * Are their definitions for the fidelity variables (fidelity_complete_percent, fidelity_complete_sum, fidelity_started_sum)? 
+    * Do they have to do with the proportion/number of assignments that a student completed/started?
+    * If so, why is the max number of fidelity_complete_sum 13, but the complete_assignment variables only go up to 11?
+    * Where can I get more information about the assignments and how they worked?
+    
+    
+    
+     fedility as: did students go through the motions vs fedility as did students engage in th learning proccess
