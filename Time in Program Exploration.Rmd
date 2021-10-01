@@ -1,0 +1,252 @@
+---
+title: "Time in Program Analyses"
+author: "Kirk Vanacore"
+date: "9/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE, results=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+require(psych)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(lme4)
+```
+
+```{r load data, results=FALSE}
+# From Here to There
+fh2t <- read.csv("FH2T_aggregation_overall_merge_2021_03_25 - Sheet1.csv",
+                 na.strings = c("", "N/A"))
+colnames(fh2t)
+
+# ASSITSments
+assist <- read.csv("ASSISTments_summary_merged_2021_04_23 - Sheet1.csv",
+                 na.strings = c("", "N/A"))
+colnames(assist)
+
+```
+
+# Data Cleaning 
+_code hidden_
+```{r Data Cleaning, echo = FALSE, results = FALSE}
+# From Here to There
+fh2t$o_avg_time_session_minutes <- (fh2t$o_avg_time_session)/60000 # convert to minutes
+describe(fh2t$o_avg_time_session_minutes) 
+## outliers  
+describe(scale(fh2t$o_avg_time_session_minutes))
+
+
+# ASSISTments
+table(is.na(assist$avg_time_on_task_o)) # a lot of missing data
+table(is.na(assist$sum_time_on_task_o)) # a lot of missing data
+# Is this just because we don't get values if students don't complete assignments?
+table(is.na(assist$sum_time_on_task_o), is.na(assist$sum_time_on_task_as2))
+table(is.na(assist$sum_time_on_task_o), is.na(assist$sum_time_on_task_as3))
+table(is.na(assist$sum_time_on_task_o), is.na(assist$sum_time_on_task_as4))
+table(is.na(assist$sum_time_on_task_o), is.na(assist$sum_time_on_task_as5))
+table(is.na(assist$sum_time_on_task_o), is.na(assist$sum_time_on_task_as7))
+table(is.na(assist$sum_time_on_task_o), is.na(assist$sum_time_on_task_as8))
+table(is.na(assist$sum_time_on_task_o), is.na(assist$sum_time_on_task_as9))
+table(is.na(assist$sum_time_on_task_o), is.na(assist$sum_time_on_task_as10))
+table(is.na(assist$sum_time_on_task_o), is.na(assist$sum_time_on_task_as11))
+  # The only cases with missing total sums do not have missing sums at the assignment levels.
+  # This suggests that when these were summed the NAs were not converted to zeros.
+
+
+table((assist$started_assignment_2), is.na(assist$sum_time_on_task_as2))
+# assist[, c("started_assignment_2", "sum_time_on_task_as2")]
+# there are cases where students are logged as having stared the assignment, but do not have any time (NA)
+table(is.na(assist[which(assist$started_assignment_2 == 0), 
+       c("started_assignment_2", 
+         "sum_time_on_task_as2")]$sum_time_on_task_as2))
+# all of the times that students missed an assignment they they have NA for the time (which should actually be zero)
+# alternatively having an NA for sum_time vars does not mean that the student didn't start the assignment
+
+#check this logic on other variables
+table(is.na(assist[which(assist$started_assignment_3 == 0), 
+       c("started_assignment_3", 
+         "sum_time_on_task_as3")]$sum_time_on_task_as3)) # check
+table(is.na(assist[which(assist$started_assignment_10 == 0), 
+       c("started_assignment_10", 
+         "sum_time_on_task_as10")]$sum_time_on_task_as10)) #check
+
+# recalculate the sum time for assessments
+assist$sum_tot_recaclc <- ifelse((assist$started_assignment_2) == 0, 0, assist$sum_time_on_task_as2) +
+  ifelse((assist$started_assignment_3) == 0, 0, assist$sum_time_on_task_as3) +
+  ifelse((assist$started_assignment_4) == 0, 0, assist$sum_time_on_task_as4) +
+  ifelse((assist$started_assignment_5) == 0, 0, assist$sum_time_on_task_as5) +
+  ifelse((assist$started_assignment_7) == 0, 0, assist$sum_time_on_task_as7) +
+  ifelse((assist$started_assignment_8) == 0, 0, assist$sum_time_on_task_as8) +
+  ifelse((assist$started_assignment_9) == 0, 0, assist$sum_time_on_task_as9) +
+  ifelse((assist$started_assignment_10) == 0, 0, assist$sum_time_on_task_as10) +
+  ifelse((assist$started_assignment_11) == 0, 0, assist$sum_time_on_task_as11) 
+
+# check to make sure the calculations are the same when these isn't missing data -> YES
+cor(assist[is.na(assist$sum_time_on_task_o) ==F,]$sum_time_on_task_o,
+    assist[is.na(assist$sum_time_on_task_o) ==F,]$sum_tot_recaclc
+    ) # good
+
+table(is.na(assist$sum_tot_recaclc)) # still a lot of missing data :( -> 51.4% ?? seems really high
+
+# create average assignment times
+  # calculate numbers of assignment started
+  table(assist$started_assignment_2)
+  describe(assist$sum_time_on_task_as2)
+  # since we know that there are cases where the the started_assignment is NA and time on task is > 0, then I making the assumption that the # of assignment started is the include the sum of assignments that have either stated assignment = 1 or time > 0
+  assist$sum_started_assignments_o_recalac <- 
+        ifelse((assist$started_assignment_2) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as2) == F & assist$sum_time_on_task_as2 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_3) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as3) == F & assist$sum_time_on_task_as3 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_4) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as4) == F & assist$sum_time_on_task_as4 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_5) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as5) == F & assist$sum_time_on_task_as5 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_7) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as7) == F & assist$sum_time_on_task_as7 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_8) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as8) == F & assist$sum_time_on_task_as8 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_9) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as9) == F & assist$sum_time_on_task_as9 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_10) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as10) == F & assist$sum_time_on_task_as10 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_11) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as11) == F & assist$sum_time_on_task_as11 > 0, 1, 0)) 
+  
+  
+      
+  
+  table(assist$sum_started_assignments_o_recalac)
+  table(is.na(assist$sum_started_assignments_o_recalac))
+  table(is.na(assist$sum_started_assignments_o_recalac), is.na(assist$sum_tot_recaclc))
+  # there are no instances where we are missing the sum_started_assignments_o_recalac and we are not missing the sum of tot
+  
+  assist$sum_tot_Mins_recaclc <- assist$sum_tot_recaclc/(60) # inferring from the data dictionary that these are in secs
+  assist$avg_time_on_task_o_recalc <- assist$sum_tot_Mins_recaclc/assist$sum_started_assignments_o_recalac
+  
+describe(assist$avg_time_on_task_o_recalc)
+describe(scale(assist$avg_time_on_task_o_recalc))
+
+
+```
+## Notes on the time variables:
+* The FH2T data has extreme outliers, probably due to timeout issues. We may want to go back an impose a session level timeout threshold before aggregating the data. Alternatively, we could go back to the log file data and examine when the student's activity ceased and recalculate the session level data (last activity time - loggin time)
+* I recalculated the ASSISTments aggregated time data because many of the students were missing the summative time variables. I inferred that this was because if their assignment level data was ever NA (possibly because they didn't start the assignment) then all their summitive data is also NA. I converted the NA to zero where appropriate to reduced missingness.
+* The ASSISTments data has missing time data even for students who started the sessions. I'm not sure why this would be the case.
+* How where the assignment data captured? Were these self reported?
+
+# Time 
+measured in minutes
+
+## Avgerage time 
+### Descriptives
+```{r}
+# From Here to There
+describe(fh2t$o_avg_time_session_minutes)
+
+# ASSISTments
+describe(assist$avg_time_on_task_o_recalc)
+```
+Medians are comparable but From Here 2 There has an extreme postie skew.
+
+### Outliers
+```{r}
+# From Here to There
+table(scale(fh2t$o_avg_time_session_minutes) > 3) 
+# z score doesn't really capture the number of outliers, I think this is because there is one that is really driving the mean up
+# perhaps going back an imposing a timeout rule before aggregating may help, if we want to use this variable
+table(fh2t$o_avg_time_session_minutes > 60) # 32 over two hours
+table(fh2t$o_avg_time_session_minutes > 120) # 30 over two hours
+table(fh2t$o_avg_time_session_minutes > 24*60) # 18 over 24 hours
+
+# ASSISTments
+table(scale(assist$avg_time_on_task_o_recalc) > 2)# some outliers
+table(assist$avg_time_on_task_o_recalc > 60) # 2 over one hour
+table(assist$avg_time_on_task_o_recalc > 120) # no one over 2 hours
+
+```
+
+### Density` Plots
+``` {r, fig.show="hold", out.width="50%"}
+ggplot(
+  data = fh2t,
+  aes(x = o_avg_time_session_minutes)) +
+  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  xlim(0, 60) +
+  theme_minimal() +
+  labs(title ="From Here to There",
+       subtitle = "32 students with avg times > 60mins not shown",
+       x = "Avg Minutes per Assignment") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(face = 'italic'))
+
+ggplot(
+  data = assist,
+  aes(x = avg_time_on_task_o_recalc,
+      group = rdm_condition,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
+  xlim(0, 60) +
+  theme_minimal() + 
+  labs(title = "ASSISTments",
+       subtitle = "2 students with avg times > 60mins not shown",
+       x = "Avg Minutes per Assignment") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(face = 'italic'))
+
+```
+
+
+## Total Time
+### Descriptives
+```{r}
+# From Here to There
+psych::describe(fh2t$o_time_interaction_in_min) 
+
+# ASSISTments
+psych::describe(assist$sum_tot_Mins_recaclc) 
+```
+From Here to There students seem to have spent more time in the program compaired with assistment students, but this could be driven by the motive skew of these data, which could be caused with timeout issues in the way login/logout data are captured.
+
+### Outliers
+```{r}
+# From Here to There
+psych::describe(scale(fh2t$o_time_interaction_in_min) )
+table(scale(fh2t$o_time_interaction_in_min) > 3) 
+# z score doesn't really capture the number of outliers, I think this is because there is one that is really driving the mean up
+# perhaps going back an imposing a timeout rule before aggregating may help, if we want to use this variable
+table(fh2t$o_time_interaction_in_min > 500)
+
+# ASSISTments
+psych::describe(scale(assist$sum_tot_Mins_recaclc) )
+table(scale(assist$sum_tot_Mins_recaclc) > 3) 
+table(assist$sum_tot_Mins_recaclc > 500)
+
+table(assist$rdm_condition)
+```
+
+### Density Plots
+```{r, fig.show="hold", out.width="50%"}
+ggplot(
+  data = fh2t,
+  aes(x = o_time_interaction_in_min)) +
+  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  xlim(0, 500) +
+  theme_minimal() +
+  labs(title ="From Here to There",
+       subtitle = "10 students with time > 500 mins not shown",
+       x = "Total Minutes In Porgram") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(face = 'italic'))
+
+ggplot(
+  data = assist[which(is.na(assist$rdm_condition) == F ),],
+  aes(x = sum_tot_Mins_recaclc,
+      group = rdm_condition,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
+  xlim(0, 500) +
+  theme_minimal() + 
+  labs(title = "ASSISTments",
+       subtitle = "1 student with a time > 500 mins not shown",
+       x = "Total Minutes In Porgram") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(face = 'italic'))
+```
+

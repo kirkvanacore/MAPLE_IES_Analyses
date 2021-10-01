@@ -1,9 +1,12 @@
 ---
-title: "IES Data Exporation"
+title: "Implementation Fidelity 1: Assignments Started/Completed"
 author: "Kirk Vanacore"
 date: "9/15/2021"
 output: html_document
 ---
+
+The following analyses examine the cross condition fidelity metrics: number of assignments started and completed during the experiment. 
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -11,7 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, include=FALSE}
-
 require(psych)
 require(ggplot2)
 library(ggplot2)
@@ -64,12 +66,10 @@ length(unique(assess$student_id))
 table(duplicated(assess$student_id)) 
 table(is.na(assess$student_id)) 
 length(unique(assess$student_number)) 
-
-
 ```
 
 
-## Fedility Metrics Across Programs
+# Fedility Metrics Across Programs
 
 **Variables to explore:**
 * fidelity_started_sum
@@ -122,8 +122,7 @@ ggplot(
 * a lot of missing data (almost 20%)
 * alot of variability
 * bimodal/neg skew across conditions
-* Daagonbox is sig lower than all conditions 
-  * not this is not true when taking into account the bonf corrected p value (.0125)
+* Dragonbox is sig lower than all conditions 
 
 
 
@@ -267,8 +266,8 @@ ggplot(
 ```
 
 
-
-## Do schools/class differ in terms of implemntation?
+# Variances of Implementation by nesting Units (School/Class)
+Do schools/class differ in terms of implemntation?
 
 ### Schools 
 
@@ -358,6 +357,7 @@ summary(model_2)
 
 
 ```
+
 ### Teacher/Class
 ```{r}
 
@@ -391,59 +391,3 @@ summary(null_model2)
 
 ```
 
-
-## Attendence
-
-
-Relavant Variables
-* MEMBERSHIPDAYS6	AbsentDays + PresentDays
-* A DM6 ->	MembershipDays / 178
-* ADA6 ->	PresentDays / 178
-* Absencesavg.Daily6 ->	UnexcusedDays / 179
-* PercentInAttendance6 ->	PresentDays / MembershipDays
-* Absencesavg.Daily5
-* PercentInAttendance5
-* AbsentDays6
-* PresentDays6
-* MEMBERSHIPDAYS6	AbsentDays + PresentDays
-* A DM6 ->	MembershipDays / 178
-* ADA6 ->	PresentDays / 178
-* Absencesavg.Daily6 ->	UnexcusedDays / 179
-* PercentInAttendance6 ->	PresentDays / MembershipDays
-
-```{r}
-describe(assess$PercentInAttendance5)
-describe(assess$PercentInAttendance6)
-
-
-# denisity plot by condition
-ggplot(
-  data = assess,
-  aes(x = PercentInAttendance6,
-      group = condition_assignment,
-      fill = condition_assignment)
-) +
-  geom_density(adjust = 1.5, alpha = .4)
-
-
-# denisity plot by group
-ggplot(
-  data = assess,
-  aes(x = PercentInAttendance6,
-      group = condition_assignment,
-      fill = condition_assignment)
-) +
-  geom_density(adjust = 1.5, alpha = .4)
-
-```
-
-## Questions:
- * Is there a variable for the students grade during the study?
- * Are their definitions for the fidelity variables (fidelity_complete_percent, fidelity_complete_sum, fidelity_started_sum)? 
-    * Do they have to do with the proportion/number of assignments that a student completed/started?
-    * If so, why is the max number of fidelity_complete_sum 13, but the complete_assignment variables only go up to 11?
-    * Where can I get more information about the assignments and how they worked?
-    
-    
-    
-     fedility as: did students go through the motions vs fedility as did students engage in th learning proccess
