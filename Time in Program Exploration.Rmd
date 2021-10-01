@@ -250,3 +250,64 @@ ggplot(
         plot.subtitle = element_text(face = 'italic'))
 ```
 
+
+
+# Between School/Class Variance 
+I only ran these for total time, because it seemed redundant to run the for average time as well
+```{r, fig.show="hold", out.width="50%"}
+### Variance in fidelity by school
+ggplot(
+  fh2t[is.na(fh2t$final_school_id) == F, ],
+  aes(x = final_school_id, 
+      y = o_time_interaction_in_min)
+) +
+  labs(title ="From Here to There",
+       subtitle = "10 students with time > 500 mins not shown",
+       y = "Total Minutes In Porgram") +
+  geom_boxplot(alpha = .7, fill = "gray") +
+    ylim(0, 500) +
+  theme_minimal()
+
+
+ggplot(
+  assist[is.na(assist$final_school_id) == F & is.na(assist$rdm_condition) == F , ],
+  aes(x = final_school_id, 
+      y = sum_tot_Mins_recaclc,
+      fill = rdm_condition)
+) +
+  geom_boxplot(alpha = .7) +
+    ylim(0, 500) +
+  labs(title = "ASSISTments",
+       subtitle = "1 student with a time > 500 mins not shown",
+       y = "Total Minutes In Porgram") +
+  theme_minimal()
+
+```
+
+## ICCs
+
+```{r}
+# From Here to There
+# IntraClass Correlation
+null_model <- lmer(
+  o_time_interaction_in_min ~ 1 +
+  (1|final_school_id/final_teacher_class),
+  data = fh2t[scale(fh2t$o_time_interaction_in_min) < 2.5, ]
+  
+)
+summary(null_model)
+# ICC teacher/class .26 (Much lower if you leave the outliers in) 
+# ICC school .31 
+
+
+# ASSITments
+null_model <- lmer(
+  sum_tot_Mins_recaclc ~ 1 +
+  (1|final_school_id/final_teacher_class),
+  data = assist
+  
+)
+summary(null_model)
+# ICC teacher/class .27 
+# ICC school .41
+``` 

@@ -83,7 +83,16 @@ cor(assist[is.na(assist$sum_completed_o) ==F,]$sum_completed_o,
 describe(fh2t$o_avg_problem_session)
 
 # ASSISTments
-describe(assist$sum_completed_o_recalc)
+describe(assist$avg_completed_o_recalc)
+describeBy(assist$avg_completed_o_recalc,
+           assist$rdm_condition)
+
+t.test(fh2t$o_avg_problem_session,
+    assist$avg_completed_o_recalc)
+
+# Differences between Groups in 
+summary(
+aov(avg_completed_o_recalc ~ rdm_condition, data = assist))
 
 ```
 
@@ -96,8 +105,8 @@ nrow(fh2t)*.005 #there should only be 5 student with a z score above 2.5
 nrow(fh2t)*.001 #there should only be 1 student with a z score above 3 
 
 # ASSISTments
-describe(scale(assist$sum_completed_o_recalc))
-table(scale(assist$sum_completed_o_recalc) > 2) # no real outliers here (probably a limited number of problems that studentc could complete?)
+describe(scale(assist$avg_completed_o_recalc))
+table(scale(assist$avg_completed_o_recalc) > 2) # no real outliers here (probably a limited number of problems that studentc could complete?)
 ```
  
 ### Density Plots
@@ -114,8 +123,10 @@ ggplot(
 
 ggplot(
   data = assist,
-  aes(x = avg_completed_o_recalc)) +
-  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  aes(x = avg_completed_o_recalc,
+      group = rdm_condition,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
   theme_minimal() +
   labs(title ="ASSISTments",
        x = "Total Problems Complete") +
@@ -128,18 +139,29 @@ ggplot(
 ### Descriptives
 ```{r}
 # From here to There
-describe(fh2t$o_avg_problem_session)
+describe(fh2t$o_total_completed)
 
 # ASSISTments
 describe(assist$sum_completed_o_recalc)
+describeBy(assist$sum_completed_o_recalc, assist$rdm_condition)
+
+# difference b/w From Here to There and ASSISTments
+t.test(fh2t$o_total_completed,
+    assist$sum_completed_o_recalc)
+
+# Differences between Groups in 
+summary(
+aov(sum_completed_o_recalc ~ rdm_condition, data = assist))
+
 
 ```
 
 ### Outliers
 ```{r}
 # From Here to There
-describe(scale(fh2t$o_avg_problem_session))
-table(scale(fh2t$o_avg_problem_session) > 3) # some outliers (18 above 3) 
+describe(scale(fh2t$o_total_completed))
+table(scale(fh2t$o_total_completed) > 2.5) # some outliers (19 above 3) 
+table(scale(fh2t$o_total_completed) > 3) # some outliers (9 above 3) 
 nrow(fh2t)*.005 #there should only be 5 student with a z score above 2.5
 nrow(fh2t)*.001 #there should only be 1 student with a z score above 3 
 
@@ -152,7 +174,7 @@ table(scale(assist$sum_completed_o_recalc) > 2) # no real outliers here (probabl
 ```{r, fig.show="hold", out.width="50%"}
 ggplot(
   data = fh2t,
-  aes(x = o_avg_problem_session)) +
+  aes(x = o_total_completed)) +
   geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
   theme_minimal() +
   labs(title ="From Here to There",
@@ -161,9 +183,11 @@ ggplot(
         plot.subtitle = element_text(face = 'italic'))
 
 ggplot(
-  data = assist,
-  aes(x = sum_completed_o_recalc)) +
-  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  data = assist[which(is.na(assist$rdm_condition) == F ),],
+  aes(x = sum_completed_o_recalc,
+      group = rdm_condition,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
   theme_minimal() +
   labs(title ="ASSISTments",
        x = "Total Problems Complete") +
@@ -173,79 +197,63 @@ ggplot(
 ```
 
 
-```{r}
-describe(fh2t$o_distinct_completed)
 
-describe(scale(fh2t$o_distinct_completed))
-table(scale(fh2t$o_distinct_completed) > 3) # some outliers (18 above 3) 
-nrow(fh2t)*.005 #there should only be 6 student with a z score above 2.5
-nrow(fh2t)*.001 #there should only be 1 student with a z score above 3 
+# Between School/Class Variance 
+I only ran these for total time, because it seemed redundant to run the for average time as well
+```{r, fig.show="hold", out.width="50%"}
+### Variance in fidelity by school
+ggplot(
+  fh2t[is.na(fh2t$final_school_id) == F, ],
+  aes(x = final_school_id, 
+      y = o_total_completed)
+) +
+  labs(title ="From Here to There",
+       y = "Total Minutes In Porgram") +
+      ylim(0, 370) +
+  geom_boxplot(alpha = .7, fill = "gray") +
+  theme_minimal()
+
 
 ggplot(
-  data = fh2t,
-  aes(x = o_distinct_completed)) +
-  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
-#  xlim(0, 300) +
+  assist[is.na(assist$final_school_id) == F & is.na(assist$rdm_condition) == F , ],
+  aes(x = final_school_id, 
+      y = sum_completed_o_recalc,
+      fill = rdm_condition)
+) +
+  geom_boxplot(alpha = .7) +
+    ylim(0, 370) +
+  labs(title = "ASSISTments",
+       subtitle = "1 student with a time > 500 mins not shown",
+       y = "Total Minutes In Porgram") +
   theme_minimal()
 
 ```
 
-# Avg Time by Avg Problems per Session
+## ICCs
+
 ```{r}
-# 
-# cor.test(fh2t$o_avg_time_session_minutes, 
-#          fh2t$o_avg_problem_session)
-# ggplot(
-#   data = fh2t,
-#   aes(x = o_avg_time_session_minutes,
-#       y = o_avg_problem_session)) +
-#   geom_point( alpha = .7, fill = "gray") +
-#     geom_smooth(method='lm', formula= y~x) +
-#   theme_minimal()
-# 
-# cor.test(fh2t[fh2t$o_avg_time_session_minutes < 120,]$o_avg_time_session_minutes, 
-#          fh2t[fh2t$o_avg_time_session_minutes < 120,]$o_avg_problem_session)
-# # the correlation between time and problems complete is sig when excluding students who have very long avg session times (over 2 hours)
-# 
-# ggplot(
-#   data = fh2t[fh2t$o_avg_time_session_minutes < 120,],
-#   aes(x = o_avg_time_session_minutes,
-#       y = o_avg_problem_session)) +
-#   geom_point(alpha = .5, fill = "gray") +
-#   geom_smooth(method='lm', formula= y~x) +
-#   theme_minimal()
-# 
-
-```
-
-# Total Time by Total Problems per Session
-```{r}
-# 
-# cor.test(fh2t$o_time_interaction_in_min, 
-#          fh2t$o_distinct_completed)
-# ggplot(
-#   data = fh2t,
-#   aes(x = o_time_interaction_in_min,
-#       y = o_distinct_completed)) +
-#   geom_point( alpha = .7, fill = "gray") +
-#     geom_smooth(method='lm', formula= y~x) +
-#   theme_minimal()
-# 
-# # cap time at a max of 2 hours per session
-# 9*60*2
-# 
-# cor.test(fh2t[fh2t$o_time_interaction_in_min < 1560,]$o_time_interaction_in_min, 
-#          fh2t[fh2t$o_time_interaction_in_min < 1560,]$o_distinct_completed)
-# #correlation doubles
-# 
-# ggplot(
-#   data = fh2t[fh2t$o_time_interaction_in_min < 1560,],
-#   aes(x = o_time_interaction_in_min,
-#       y = o_distinct_completed)) +
-#   geom_point(alpha = .5, fill = "gray") +
-#   geom_smooth(method='lm', formula= y~x) +
-#   theme_minimal()
+# From Here to There
+# IntraClass Correlation
+null_model <- lmer(
+  o_total_completed ~ 1 +
+  (1|final_school_id/final_teacher_class),
+  data = fh2t
+  
+)
+summary(null_model)
+# ICC teacher/class .27 
+# ICC school .12 (It is interesting that this is lower than all the others)
 
 
-```
+# ASSITments
+null_model <- lmer(
+  sum_completed_o_recalc ~ 1 +
+  (1|final_school_id/final_teacher_class),
+  data = assist
+  
+)
+summary(null_model)
+# ICC teacher/class .23 
+# ICC school .41
+``` 
 
