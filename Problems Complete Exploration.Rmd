@@ -1,0 +1,250 @@
+---
+title: "Problems Complete Analyses"
+author: "Kirk Vanacore"
+date: "10/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE, results=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+require(psych)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(lme4)
+```
+
+```{r load data, results=FALSE}
+# From Here to There
+fh2t <- read.csv("FH2T_aggregation_overall_merge_2021_03_25 - Sheet1.csv",
+                 na.strings = c("", "N/A"))
+colnames(fh2t)
+
+# ASSITSments
+assist <- read.csv("ASSISTments_summary_merged_2021_04_23 - Sheet1.csv",
+                 na.strings = c("", "N/A"))
+colnames(assist)
+
+```
+
+# Data Cleaning 
+
+## Problem Variables
+```{r}
+table(is.na(assist$sum_completed_o)) # a lot of missing data
+# I imagine that this has a similar cause to the summarize time time time data issue
+
+assist$sum_completed_o_recalc <- 
+  ifelse((assist$started_assignment_2) == 0, 0, assist$sum_completed_as2) +
+  ifelse((assist$started_assignment_3) == 0, 0, assist$sum_completed_as3) +
+  ifelse((assist$started_assignment_4) == 0, 0, assist$sum_completed_as4) +
+  ifelse((assist$started_assignment_5) == 0, 0, assist$sum_completed_as5) +
+  ifelse((assist$started_assignment_7) == 0, 0, assist$sum_completed_as7) +
+  ifelse((assist$started_assignment_8) == 0, 0, assist$sum_completed_as8) +
+  ifelse((assist$started_assignment_9) == 0, 0, assist$sum_completed_as9) +
+  ifelse((assist$started_assignment_10) == 0, 0, assist$sum_completed_as10) +
+  ifelse((assist$started_assignment_11) == 0, 0, assist$sum_completed_as11) 
+
+table(is.na(assist$sum_completed_o_recalc)) #less missing data -> 48.4%
+
+ assist$sum_started_assignments_o_recalac <- 
+        ifelse((assist$started_assignment_2) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as2) == F & assist$sum_time_on_task_as2 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_3) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as3) == F & assist$sum_time_on_task_as3 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_4) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as4) == F & assist$sum_time_on_task_as4 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_5) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as5) == F & assist$sum_time_on_task_as5 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_7) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as7) == F & assist$sum_time_on_task_as7 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_8) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as8) == F & assist$sum_time_on_task_as8 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_9) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as9) == F & assist$sum_time_on_task_as9 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_10) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as10) == F & assist$sum_time_on_task_as10 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_11) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as11) == F & assist$sum_time_on_task_as11 > 0, 1, 0)) 
+  
+  
+
+
+assist$avg_completed_o_recalc <- assist$sum_completed_o_recalc/assist$sum_started_assignments_o_recalac
+
+cor(assist[is.na(assist$sum_completed_o) ==F,]$sum_completed_o,
+    assist[is.na(assist$sum_completed_o) ==F,]$sum_completed_o_recalc
+    ) # good
+
+
+```
+
+# Problems Complete
+## Average Problems
+### Descriptives
+```{r}
+# From here to There
+describe(fh2t$o_avg_problem_session)
+
+# ASSISTments
+describe(assist$sum_completed_o_recalc)
+
+```
+
+### Outliers
+```{r}
+# From Here to There
+describe(scale(fh2t$o_avg_problem_session))
+table(scale(fh2t$o_avg_problem_session) > 3) # some outliers (18 above 3) 
+nrow(fh2t)*.005 #there should only be 5 student with a z score above 2.5
+nrow(fh2t)*.001 #there should only be 1 student with a z score above 3 
+
+# ASSISTments
+describe(scale(assist$sum_completed_o_recalc))
+table(scale(assist$sum_completed_o_recalc) > 2) # no real outliers here (probably a limited number of problems that studentc could complete?)
+```
+ 
+### Density Plots
+```{r, fig.show="hold", out.width="50%"}
+ggplot(
+  data = fh2t,
+  aes(x = o_avg_problem_session)) +
+  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  theme_minimal() +
+  labs(title ="From Here to There",
+       x = "Total Problems Complete") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(face = 'italic'))
+
+ggplot(
+  data = assist,
+  aes(x = avg_completed_o_recalc)) +
+  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  theme_minimal() +
+  labs(title ="ASSISTments",
+       x = "Total Problems Complete") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(face = 'italic'))
+
+```
+
+## Total Problems (o_distinct_completed)
+### Descriptives
+```{r}
+# From here to There
+describe(fh2t$o_avg_problem_session)
+
+# ASSISTments
+describe(assist$sum_completed_o_recalc)
+
+```
+
+### Outliers
+```{r}
+# From Here to There
+describe(scale(fh2t$o_avg_problem_session))
+table(scale(fh2t$o_avg_problem_session) > 3) # some outliers (18 above 3) 
+nrow(fh2t)*.005 #there should only be 5 student with a z score above 2.5
+nrow(fh2t)*.001 #there should only be 1 student with a z score above 3 
+
+# ASSISTments
+describe(scale(assist$sum_completed_o_recalc))
+table(scale(assist$sum_completed_o_recalc) > 2) # no real outliers here (probably a limited number of problems that studentc could complete?)
+```
+ 
+### Density Plots
+```{r, fig.show="hold", out.width="50%"}
+ggplot(
+  data = fh2t,
+  aes(x = o_avg_problem_session)) +
+  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  theme_minimal() +
+  labs(title ="From Here to There",
+       x = "Total Problems Complete") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(face = 'italic'))
+
+ggplot(
+  data = assist,
+  aes(x = sum_completed_o_recalc)) +
+  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  theme_minimal() +
+  labs(title ="ASSISTments",
+       x = "Total Problems Complete") +
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(face = 'italic'))
+
+```
+
+
+```{r}
+describe(fh2t$o_distinct_completed)
+
+describe(scale(fh2t$o_distinct_completed))
+table(scale(fh2t$o_distinct_completed) > 3) # some outliers (18 above 3) 
+nrow(fh2t)*.005 #there should only be 6 student with a z score above 2.5
+nrow(fh2t)*.001 #there should only be 1 student with a z score above 3 
+
+ggplot(
+  data = fh2t,
+  aes(x = o_distinct_completed)) +
+  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+#  xlim(0, 300) +
+  theme_minimal()
+
+```
+
+# Avg Time by Avg Problems per Session
+```{r}
+
+cor.test(fh2t$o_avg_time_session_minutes, 
+         fh2t$o_avg_problem_session)
+ggplot(
+  data = fh2t,
+  aes(x = o_avg_time_session_minutes,
+      y = o_avg_problem_session)) +
+  geom_point( alpha = .7, fill = "gray") +
+    geom_smooth(method='lm', formula= y~x) +
+  theme_minimal()
+
+cor.test(fh2t[fh2t$o_avg_time_session_minutes < 120,]$o_avg_time_session_minutes, 
+         fh2t[fh2t$o_avg_time_session_minutes < 120,]$o_avg_problem_session)
+# the correlation between time and problems complete is sig when excluding students who have very long avg session times (over 2 hours)
+
+ggplot(
+  data = fh2t[fh2t$o_avg_time_session_minutes < 120,],
+  aes(x = o_avg_time_session_minutes,
+      y = o_avg_problem_session)) +
+  geom_point(alpha = .5, fill = "gray") +
+  geom_smooth(method='lm', formula= y~x) +
+  theme_minimal()
+
+
+```
+
+# Total Time by Total Problems per Session
+```{r}
+
+cor.test(fh2t$o_time_interaction_in_min, 
+         fh2t$o_distinct_completed)
+ggplot(
+  data = fh2t,
+  aes(x = o_time_interaction_in_min,
+      y = o_distinct_completed)) +
+  geom_point( alpha = .7, fill = "gray") +
+    geom_smooth(method='lm', formula= y~x) +
+  theme_minimal()
+
+# cap time at a max of 2 hours per session
+9*60*2
+
+cor.test(fh2t[fh2t$o_time_interaction_in_min < 1560,]$o_time_interaction_in_min, 
+         fh2t[fh2t$o_time_interaction_in_min < 1560,]$o_distinct_completed)
+#correlation doubles
+
+ggplot(
+  data = fh2t[fh2t$o_time_interaction_in_min < 1560,],
+  aes(x = o_time_interaction_in_min,
+      y = o_distinct_completed)) +
+  geom_point(alpha = .5, fill = "gray") +
+  geom_smooth(method='lm', formula= y~x) +
+  theme_minimal()
+
+
+```
+
