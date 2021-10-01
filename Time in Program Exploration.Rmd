@@ -307,7 +307,7 @@ null_model <- lmer(
   data = assist
   
 )
-summary(null_model)
+summary(null_model) 
 # ICC teacher/class .27 
 # ICC school .41
 ``` 

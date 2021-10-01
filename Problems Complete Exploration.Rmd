@@ -253,7 +253,7 @@ null_model <- lmer(
   
 )
 summary(null_model)
-# ICC teacher/class .23 
+# ICC teacher/class .23  
 # ICC school .41
 ``` 
 
