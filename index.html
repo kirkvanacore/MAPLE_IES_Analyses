@@ -4,32 +4,65 @@
 }
 h1 {text-align: center;}
 h2 {text-align: center;}
-h3 {text-align: left;}
+h3 {text-align: center;}
 p {text-align: left;}
+* {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  margin-right: 15px;
+  margin-left: 8px;
+}
 </style>
 
 
 <h1> Implementation Analyses </h1>
 <h2>IES Study | MAPLE Lab</h2>
-
+<br>
 <hr>
-
-<h3>
+<br>
+<h2>
   <a
-    href="https://kirkvanacore.github.io/IES_Anslyses/Implmentation-Fedility-Exploration.html">
+    href="https://kirkvanacore.github.io/MAPLE_IES_Anslyses/Implmentation-Fedility-Exploration.html">
     Fidelity Metrics Analysis</a></h4>
-<p> This markdown contains analyses of the cross-program/condition fidelity metrics listed below. The analyses include visualizations and statistical tests of the fidelity by program/condition as well as analyses of how these metrics vary by nesting units (school, teacher, class)<br>
-  <b>Key Variables:</b>
+<br>
+<p> Follow the link above to view analyses of the cross-program/condition fidelity metrics listed below. The analyses include visualizations and statistical tests of the fidelity by program/condition as well as analyses of how these metrics vary by nesting units (school, teacher, class)<br>
+<br>
+  <b>Variables:</b>
   </p>
 <ul>
   <li>Number of Assignments Started (fidelity_started_sum)</li>
   <li>Number of Assignments Complete (fidelity_complete_sum)</li>
 </ul>
-<p>
-  <b>Takeways:</b>
-</p>
+  <b>Findings/Notes:</b>
 <ul>
-  <li>Students in the Dragon Box condition had signficantly lower assignments started and complete. </li>
-  <li>Both metrics had bimodal distributions, suggesting two distnict populations: high and low fedility </li>
-  <li>Much of the vairance in fedility was assocaited with students nexting units (school and class). Intra-class correlations for both school/class ranged from .29 to .36 </li>
+  <li>Students in the Dragon Box condition had significantly lower assignments started and complete. </li>
+  <li>Both metrics had bimodal distributions, suggesting two district populations: high and low fidelity </li>
+  <li>Much of the variance in fidelity was associated with students nesting units (school and class). Intra-class correlations for both school/class ranged from .29 to .36 </li>
 </ul>
+</p>
+<br>
+<br>
+<h2>
+  <a
+    href="https://kirkvanacore.github.io/MAPLE_IES_Anslyses/Time-in-Program-Exploration.html">
+    Time in Program Analyses </a></h2>
+<br>
+<p> Follow the link above to view analyese of time in program for students in From Here to There and ASSISTments (instant deedback and buisness as usual conditions). Note that these data do no exist for students who used Dragon Box. <br>
+<br>
+  <b>Variables:</b>
+<ul>
+  <li> Avgerage and Total Session Time in From Here to There (o_avg_time_session_minutes) </li>
+  <li> Avgerage and Total "Time on Task" in ASSISTments (the variable need to be recalculated b/c the orginal variable in the data set was incorrect) </li>
+</ul>
+  <b>Findings/Notes:</b>
+<ul>
+  <li>Overall students in the buisness as usual condition spent the most time in the program and students in From Here to There.</li>
+  <li>Distributions for each condition was bimodal, suggesting (along with Fedility metrics), high a low fedility groups.</li>
+  <li>Similar to the fidelity metrics, much of the variance in time was associated with the schools/classes (ICCs randging from .26 to .41).</li>
+  <li><b>Time Data Issues</b></li>
+  <ul>  
+    <li>The From Here To There data is much more complete, but contains more serious outliers. This may be a product of the way time was captured in the program. There does not seem to be automated time out feature in From here to There, which would drive up the total time. Perhaps we should consider placing a section time restriction on the data or going back to the log file data and seeing if we can estimate time of last activity (which would be more accurate but more time intensive). For the </li>
+    <li>The ASSISTment time data has far more missing data. I need to export whether this is simply because a large number of ASSISTments students did not use the program at all. I also would like to know more about</li>
+    </ul>
+</ul>
+</p>
