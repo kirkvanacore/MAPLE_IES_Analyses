@@ -34,7 +34,8 @@ colnames(assist)
 # Data Cleaning 
 
 ## Problem Variables
-```{r}
+_code hidden_
+```{r, echo = FALSE, results = FALSE}
 table(is.na(assist$sum_completed_o)) # a lot of missing data
 # I imagine that this has a similar cause to the summarize time time time data issue
 
@@ -144,7 +145,7 @@ nrow(fh2t)*.001 #there should only be 1 student with a z score above 3
 
 # ASSISTments
 describe(scale(assist$sum_completed_o_recalc))
-table(scale(assist$sum_completed_o_recalc) > 2) # no real outliers here (probably a limited number of problems that studentc could complete?)
+table(scale(assist$sum_completed_o_recalc) > 2) # no real outliers here (probably a limited number of problems that students could complete?)
 ```
  
 ### Density Plots
@@ -191,59 +192,59 @@ ggplot(
 
 # Avg Time by Avg Problems per Session
 ```{r}
-
-cor.test(fh2t$o_avg_time_session_minutes, 
-         fh2t$o_avg_problem_session)
-ggplot(
-  data = fh2t,
-  aes(x = o_avg_time_session_minutes,
-      y = o_avg_problem_session)) +
-  geom_point( alpha = .7, fill = "gray") +
-    geom_smooth(method='lm', formula= y~x) +
-  theme_minimal()
-
-cor.test(fh2t[fh2t$o_avg_time_session_minutes < 120,]$o_avg_time_session_minutes, 
-         fh2t[fh2t$o_avg_time_session_minutes < 120,]$o_avg_problem_session)
-# the correlation between time and problems complete is sig when excluding students who have very long avg session times (over 2 hours)
-
-ggplot(
-  data = fh2t[fh2t$o_avg_time_session_minutes < 120,],
-  aes(x = o_avg_time_session_minutes,
-      y = o_avg_problem_session)) +
-  geom_point(alpha = .5, fill = "gray") +
-  geom_smooth(method='lm', formula= y~x) +
-  theme_minimal()
-
+# 
+# cor.test(fh2t$o_avg_time_session_minutes, 
+#          fh2t$o_avg_problem_session)
+# ggplot(
+#   data = fh2t,
+#   aes(x = o_avg_time_session_minutes,
+#       y = o_avg_problem_session)) +
+#   geom_point( alpha = .7, fill = "gray") +
+#     geom_smooth(method='lm', formula= y~x) +
+#   theme_minimal()
+# 
+# cor.test(fh2t[fh2t$o_avg_time_session_minutes < 120,]$o_avg_time_session_minutes, 
+#          fh2t[fh2t$o_avg_time_session_minutes < 120,]$o_avg_problem_session)
+# # the correlation between time and problems complete is sig when excluding students who have very long avg session times (over 2 hours)
+# 
+# ggplot(
+#   data = fh2t[fh2t$o_avg_time_session_minutes < 120,],
+#   aes(x = o_avg_time_session_minutes,
+#       y = o_avg_problem_session)) +
+#   geom_point(alpha = .5, fill = "gray") +
+#   geom_smooth(method='lm', formula= y~x) +
+#   theme_minimal()
+# 
 
 ```
 
 # Total Time by Total Problems per Session
 ```{r}
-
-cor.test(fh2t$o_time_interaction_in_min, 
-         fh2t$o_distinct_completed)
-ggplot(
-  data = fh2t,
-  aes(x = o_time_interaction_in_min,
-      y = o_distinct_completed)) +
-  geom_point( alpha = .7, fill = "gray") +
-    geom_smooth(method='lm', formula= y~x) +
-  theme_minimal()
-
-# cap time at a max of 2 hours per session
-9*60*2
-
-cor.test(fh2t[fh2t$o_time_interaction_in_min < 1560,]$o_time_interaction_in_min, 
-         fh2t[fh2t$o_time_interaction_in_min < 1560,]$o_distinct_completed)
-#correlation doubles
-
-ggplot(
-  data = fh2t[fh2t$o_time_interaction_in_min < 1560,],
-  aes(x = o_time_interaction_in_min,
-      y = o_distinct_completed)) +
-  geom_point(alpha = .5, fill = "gray") +
-  geom_smooth(method='lm', formula= y~x) +
-  theme_minimal()
+# 
+# cor.test(fh2t$o_time_interaction_in_min, 
+#          fh2t$o_distinct_completed)
+# ggplot(
+#   data = fh2t,
+#   aes(x = o_time_interaction_in_min,
+#       y = o_distinct_completed)) +
+#   geom_point( alpha = .7, fill = "gray") +
+#     geom_smooth(method='lm', formula= y~x) +
+#   theme_minimal()
+# 
+# # cap time at a max of 2 hours per session
+# 9*60*2
+# 
+# cor.test(fh2t[fh2t$o_time_interaction_in_min < 1560,]$o_time_interaction_in_min, 
+#          fh2t[fh2t$o_time_interaction_in_min < 1560,]$o_distinct_completed)
+# #correlation doubles
+# 
+# ggplot(
+#   data = fh2t[fh2t$o_time_interaction_in_min < 1560,],
+#   aes(x = o_time_interaction_in_min,
+#       y = o_distinct_completed)) +
+#   geom_point(alpha = .5, fill = "gray") +
+#   geom_smooth(method='lm', formula= y~x) +
+#   theme_minimal()
 
 
 ```

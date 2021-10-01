@@ -32,7 +32,6 @@ colnames(assist)
 ```
 
 # Data Cleaning 
-
 _code hidden_
 ```{r Data Cleaning, echo = FALSE, results = FALSE}
 # From Here to There
@@ -158,7 +157,7 @@ table(fh2t$o_avg_time_session_minutes > 24*60) # 18 over 24 hours
 
 # ASSISTments
 table(scale(assist$avg_time_on_task_o_recalc) > 2)# some outliers
-table(assist$avg_time_on_task_o_recalc > 60) # 2 no one hour
+table(assist$avg_time_on_task_o_recalc > 60) # 2 over one hour
 table(assist$avg_time_on_task_o_recalc > 120) # no one over 2 hours
 
 ```
@@ -179,8 +178,10 @@ ggplot(
 
 ggplot(
   data = assist,
-  aes(x = avg_time_on_task_o_recalc)) +
-  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  aes(x = avg_time_on_task_o_recalc,
+      group = rdm_condition,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
   xlim(0, 60) +
   theme_minimal() + 
   labs(title = "ASSISTments",
@@ -216,6 +217,8 @@ table(fh2t$o_time_interaction_in_min > 500)
 psych::describe(scale(assist$sum_tot_Mins_recaclc) )
 table(scale(assist$sum_tot_Mins_recaclc) > 3) 
 table(assist$sum_tot_Mins_recaclc > 500)
+
+table(assist$rdm_condition)
 ```
 
 ### Density Plots
@@ -233,9 +236,11 @@ ggplot(
         plot.subtitle = element_text(face = 'italic'))
 
 ggplot(
-  data = assist,
-  aes(x = sum_tot_Mins_recaclc)) +
-  geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
+  data = assist[which(is.na(assist$rdm_condition) == F ),],
+  aes(x = sum_tot_Mins_recaclc,
+      group = rdm_condition,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
   xlim(0, 500) +
   theme_minimal() + 
   labs(title = "ASSISTments",

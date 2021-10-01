@@ -122,8 +122,7 @@ ggplot(
 * a lot of missing data (almost 20%)
 * alot of variability
 * bimodal/neg skew across conditions
-* Daagonbox is sig lower than all conditions 
-  * not this is not true when taking into account the bonf corrected p value (.0125)
+* Dragonbox is sig lower than all conditions 
 
 
 
