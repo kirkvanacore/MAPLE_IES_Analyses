@@ -2,7 +2,7 @@
 * {
   font-family: sans-serif;
 }
-h1 {text-align: center;}
+h1 {text-align: left;}
 h2 {text-align: center;}
 h3 {text-align: center;}
 p {text-align: left;}
@@ -12,23 +12,45 @@ p {text-align: left;}
   margin-right: 15px;
   margin-left: 8px;
 }
+h1{
+ font-size:70px;
+ color: #051e3e
+}
+.subtitle{
+ font-size:30px;
+ color: #051e3e;
+ text-align: right;
+}
+h2{
+ font-size:25px;
+}
+/body {background-color: #e7eff6;}
+hr {
+            position: relative;
+            border: none;
+            height: 5px;
+            background: #051e3e;
+            color: #051e3e;
+        }
+a{
+  color: #005b96
+}
 </style>
 
 
-<h1> Implementation Analyses </h1>
-<h2>IES Study | MAPLE Lab</h2>
+<h1>Implementation Analyses</h1>
+<h2 class = "subtitle">IES Study | MAPLE Lab</h2>
 <br>
 <hr>
+<br>
+<p> The following links below provide detailed analyses of implementation fidelity-related variables across programs/conditions. The analyses include visualizations and statistical tests of the fidelity by program/condition and examinations of how these metrics vary by nesting units (school, teacher, class). Note that in-program data (time in program and problems complete) are not available for the Dragon Box condition. </p>
 <br>
 <h2>
   <a
     href="https://kirkvanacore.github.io/MAPLE_IES_Anslyses/Implmentation-Fedility-Exploration.html">
-    Fidelity Metrics Analysis</a></h4>
+    Fidelity Metrics Analysis</a></<h2></h2>
 <br>
-<p> Follow the link above to view analyses of the cross-program/condition fidelity metrics listed below. The analyses include visualizations and statistical tests of the fidelity by program/condition as well as analyses of how these metrics vary by nesting units (school, teacher, class)<br>
-<br>
-  <b>Variables:</b>
-  </p>
+<b>Variables:</b>
 <ul>
   <li>Number of Assignments Started (fidelity_started_sum)</li>
   <li>Number of Assignments Complete (fidelity_complete_sum)</li>
@@ -39,7 +61,6 @@ p {text-align: left;}
   <li>Both metrics had bimodal distributions, suggesting two district populations: high and low fidelity </li>
   <li>Much of the variance in fidelity was associated with students nesting units (school and class). Intra-class correlations for both school/class ranged from .29 to .36 </li>
 </ul>
-</p>
 <br>
 <br>
 <h2>
@@ -47,22 +68,39 @@ p {text-align: left;}
     href="https://kirkvanacore.github.io/MAPLE_IES_Anslyses/Time-in-Program-Exploration.html">
     Time in Program Analyses </a></h2>
 <br>
-<p> Follow the link above to view analyese of time in program for students in From Here to There and ASSISTments (instant deedback and buisness as usual conditions). Note that these data do no exist for students who used Dragon Box. <br>
-<br>
   <b>Variables:</b>
 <ul>
   <li> Avgerage and Total Session Time in From Here to There (o_avg_time_session_minutes) </li>
-  <li> Avgerage and Total "Time on Task" in ASSISTments (the variable need to be recalculated b/c the orginal variable in the data set was incorrect) </li>
+  <li> Avgerage and Total "Time on Task" in ASSISTments (these variables needed to be recalculated b/c the orginal variables in the data set were incorrect) </li>
 </ul>
   <b>Findings/Notes:</b>
 <ul>
-  <li>Overall students in the buisness as usual condition spent the most time in the program and students in From Here to There.</li>
-  <li>Distributions for each condition was bimodal, suggesting (along with Fedility metrics), high a low fedility groups.</li>
-  <li>Similar to the fidelity metrics, much of the variance in time was associated with the schools/classes (ICCs randging from .26 to .41).</li>
+  <li>Overall, students in the business as usual condition spent the most time in the program, and students in From Here to There spent the least amount of time in the program.</li>
+  <li>Distributions for each condition were bimodal, suggesting (along with Fidelity metrics), high a low fidelity groups.</li>
+  <li>Similar to the fidelity metrics, much of the variance in time was associated with the schools/classes (ICCs ranging from .26 to .41).</li>
   <li><b>Time Data Issues</b></li>
-  <ul>  
+  <ul>
     <li>The From Here To There data is much more complete, but contains more serious outliers. This may be a product of the way time was captured in the program. There does not seem to be automated time out feature in From here to There, which would drive up the total time. Perhaps we should consider placing a section time restriction on the data or going back to the log file data and seeing if we can estimate time of last activity (which would be more accurate but more time intensive). For the </li>
     <li>The ASSISTment time data has far more missing data. I need to export whether this is simply because a large number of ASSISTments students did not use the program at all. I also would like to know more about</li>
     </ul>
 </ul>
+<br>
+<br>
+<h2>
+  <a
+    href="https://kirkvanacore.github.io/MAPLE_IES_Anslyses/Problems-Complete-Exploration.html">
+    Problems Complete Analyses </a></h2>
+<br>
+  <br>
+  <b>Variables:</b>
+<ul>
+  <li>Average and total problems complete in From Here to There (o_avg_problem_session & o_total_completed)</li>
+  <li>Average and total problems complete in ASSISTments (these variables needed to be recalculated b/c the orginal variables in the data set were incorrect)</li>
+</ul>
+  <b>Findings/Notes:</b>
+<ul>
+  <li>Differences in problems complete between conditions/programs mirrored time in program differences. On average, students in the business as usual condition completed the most problems and students using From Here to There completed the fewest number of problems.</li>
+  <li>The distributions of average problems complete are normally distributed with slightly positive and negative skews for From Here To There and business as usual conditions, respectively.</li>
+  <li>There is a distinct difference in the distributions for total problems complete between the From Here to There and both ASSISTment conditions (immediate feedback and business as usual). From Here to There problems complete has a normal distribution with a positive skew, whereas both ASSITment conditions have distributions that slow downward and cap off at about 400 problems. This suggests that there is some ceiling effect in the ASSITments implementations (did the students run out of problems?) </li>
+  </ul>
 </p>
