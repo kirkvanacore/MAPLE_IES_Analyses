@@ -1,5 +1,5 @@
 ---
-title: "Implementation Fidelity 1: Assignments Started/Completed"
+title: "Fidelity Metrics Analysis"
 author: "Kirk Vanacore"
 date: "9/15/2021"
 output: html_document
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, include=FALSE}
 require(psych)
-require(ggplot2)
+require(ggplot2) 
 library(ggplot2)
 library(dplyr)
 library(tidyr)
@@ -174,7 +174,7 @@ ggplot(
 * a lot of missing data (almost 20%)
   * open question: are these students who had no compliance?
 * There is great variability in fidelity_complete_sum
-* distributions are bimodal suggesting two groups: high and low fertility
+* distributions are bimodal suggesting two groups: high and low fedelity
 * Group Differences:
   * Dragonbox is significant lower from all conditions
   * see anova and tukey post hoc tests
@@ -267,7 +267,7 @@ ggplot(
 
 
 # Variances of Implementation by nesting Units (School/Class)
-Do schools/class differ in terms of implemntation?
+Do schools/class differ in terms of implementation?
 
 ### Schools 
 
@@ -288,7 +288,7 @@ describe.by(assess$fidelity_complete_sum,
             assess$final_school_id
             )
 
-### Variance in fertility by school
+### Variance in fidelity by school
 ggplot(
   assess[is.na(assess$final_school_id) == F, ],
   aes(x = final_school_id, 
@@ -307,7 +307,7 @@ null_model <- lmer(
 summary(null_model)
 # ICC 0.3604234
 
-### Variance in fertility by school and condition
+### Variance in fedelity by school and condition
 ggplot(
   assess[is.na(assess$final_school_id) == F, ],
   aes(x = final_school_id, 
@@ -329,7 +329,7 @@ summary(model_1)
 # ICC 0.364627 
 # not a decrease, so school is a much bigger factor in fidelity than condition
 
-### Variance in fertility by school and implementation model (remote/in-person/) 
+### Variance in fedelity by school and implementation model (remote/in-person/) 
 table(assess$movement)
 # coding all 
 
