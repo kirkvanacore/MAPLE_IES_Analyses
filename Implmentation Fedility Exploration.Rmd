@@ -21,6 +21,7 @@ library(dplyr)
 library(tidyr)
 library(viridis)
 library(lme4)
+library(stringr)
 ```
 
 # IES Assessment Data
@@ -100,7 +101,7 @@ ggplot(
 ) +
   geom_density(adjust = 1.5, alpha = .4)
 
-
+# between group differences
 describe.by(assess$fidelity_started_sum,
             assess$condition_assignment)
 summary(aov(fidelity_started_sum ~
@@ -125,12 +126,9 @@ ggplot(
 * Dragonbox is sig lower than all conditions 
 
 
-
 ### fidelity_complete_sum
 NEED TO FIND DEF -> number of completed activities
-
 ```{r}
-
 ### fidelity_complete_sum ###
 class(assess$fidelity_complete_sum)
 table(is.na(assess$fidelity_complete_sum)) # 828 missing values
@@ -138,10 +136,8 @@ table(assess$fidelity_complete_sum)
 describe(assess$fidelity_complete_sum)
 
 # group differences in fidelity_complete_sum
-
 describeBy(assess$fidelity_complete_sum, assess$final_school_id)
 describeBy(assess$fidelity_complete_sum, assess$condition_assignment)
-
 
 # denisity plot by group
 ggplot(
@@ -181,7 +177,6 @@ ggplot(
   
 
 ### fidelity_started_sum X fidelity_complete_sum
-
 ```{r}
 cor.test(
   assess$fidelity_started_sum,
@@ -227,7 +222,6 @@ cor.test(
  
   ### fidelity_started_sum
 NEED TO FIND DEF -> number of started activities, maybe?
-
 ```{r}
 
 ### fidelity_started_sum ###
