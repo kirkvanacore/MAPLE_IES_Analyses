@@ -139,14 +139,14 @@ ggplot(
 ### Descriptives
 ```{r}
 # From here to There
-describe(fh2t$o_total_completed)
+describe(fh2t$o_distinct_completed)
 
 # ASSISTments
 describe(assist$sum_completed_o_recalc)
 describeBy(assist$sum_completed_o_recalc, assist$rdm_condition)
 
 # difference b/w From Here to There and ASSISTments
-t.test(fh2t$o_total_completed,
+t.test(fh2t$o_distinct_completed,
     assist$sum_completed_o_recalc)
 
 # Differences between Groups in 
@@ -159,11 +159,9 @@ aov(sum_completed_o_recalc ~ rdm_condition, data = assist))
 ### Outliers
 ```{r}
 # From Here to There
-describe(scale(fh2t$o_total_completed))
-table(scale(fh2t$o_total_completed) > 2.5) # some outliers (19 above 3) 
-table(scale(fh2t$o_total_completed) > 3) # some outliers (9 above 3) 
+describe(scale(fh2t$o_distinct_completed))
+table(scale(fh2t$o_distinct_completed) > 2.5) # some outliers (10 above 2.5) 
 nrow(fh2t)*.005 #there should only be 5 student with a z score above 2.5
-nrow(fh2t)*.001 #there should only be 1 student with a z score above 3 
 
 # ASSISTments
 describe(scale(assist$sum_completed_o_recalc))
@@ -174,7 +172,7 @@ table(scale(assist$sum_completed_o_recalc) > 2) # no real outliers here (probabl
 ```{r, fig.show="hold", out.width="50%"}
 ggplot(
   data = fh2t,
-  aes(x = o_total_completed)) +
+  aes(x = o_distinct_completed)) +
   geom_density(adjust = 1.5, alpha = .7, fill = "gray") +
   theme_minimal() +
   labs(title ="From Here to There",
@@ -205,7 +203,7 @@ I only ran these for total time, because it seemed redundant to run the for aver
 ggplot(
   fh2t[is.na(fh2t$final_school_id) == F, ],
   aes(x = final_school_id, 
-      y = o_total_completed)
+      y = o_distinct_completed)
 ) +
   labs(title ="From Here to There",
        y = "Total Minutes In Porgram") +
@@ -235,7 +233,7 @@ ggplot(
 # From Here to There
 # IntraClass Correlation
 null_model <- lmer(
-  o_total_completed ~ 1 +
+  o_distinct_completed ~ 1 +
   (1|final_school_id/final_teacher_class),
   data = fh2t
   
@@ -253,7 +251,7 @@ null_model <- lmer(
   
 )
 summary(null_model)
-# ICC teacher/class .23  
-# ICC school .41
+# ICC teacher/class .23
+# ICC school .41 
 ``` 
 
