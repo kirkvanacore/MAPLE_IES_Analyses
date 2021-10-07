@@ -22,6 +22,7 @@ library(lme4)
 
 
 # Load/Clean Data
+_code hidden_
 ## Assess Data
 ```{r, echo = FALSE, results = FALSE}
 assess <-read.csv("Assessment_merged_2021_07_16_state_assessment_N=4321 - Sheet1.csv", na.strings = c("", "N/A"))
