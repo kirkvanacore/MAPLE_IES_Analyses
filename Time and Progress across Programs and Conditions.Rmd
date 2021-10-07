@@ -1,0 +1,428 @@
+---
+title: "Time & Progress Across Programs/Conditions"
+author: "Kirk Vanacore"
+date: "10/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = FALSE, results = FALSE}
+
+require(psych)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(lme4)
+
+```
+
+
+# Load/Clean Data
+## Assess Data
+```{r, echo = FALSE, results = FALSE}
+assess <-read.csv("Assessment_merged_2021_07_16_state_assessment_N=4321 - Sheet1.csv", na.strings = c("", "N/A"))
+colnames(assess)
+
+# Build Analytic Sample 
+  # schools who did not implement: S03 (for dropping before completing the pre-test) and S07 
+  # Resrource conditsions
+table(assess$initial_school_id)
+table(assess$final_school_id)
+
+length(unique(assess$student_id)) # 4193
+table(is.na(assess$rdm_condition)) # 4092 original assigned to random treatment group
+table((assess$rdm_condition)) # 120 in resource 
+levels((assess$rdm_condition)) # 120 in resource 
+
+assess_clean <- assess %>%
+  filter(
+    # remove students who are not in original random assignment
+    is.na(rdm_condition) == F   
+    # remove students who are in resource
+    & rdm_condition != "Dragon-Resource" 
+    & rdm_condition != "FH2T-Resource"   
+    # S03 drop schools 
+    & final_school_id != "S03" & initial_school_id != "S03"
+    & final_school_id != "S07" & initial_school_id != "S07"
+
+  )
+assess <- assess_clean
+rm(assess_clean)
+```
+
+## From Here to There
+```{r, echo = FALSE, results = FALSE}
+# From Here to There
+fh2t <- read.csv("FH2T_aggregation_overall_merge_2021_03_25 - Sheet1.csv",
+                 na.strings = c("", "N/A"))
+colnames(fh2t)
+table(fh2t$o_avg_time_session_minutes)
+fh2t$o_avg_time_session_minutes <- (fh2t$o_avg_time_session)/60000 # convert to minutes
+
+fh2t <- fh2t %>%
+  select(
+    student_number,
+    rdm_condition,
+    o_distinct_completed,
+    o_avg_problem_session,
+    o_time_interaction_in_min,
+    o_avg_time_session_minutes
+  ) 
+names(fh2t) <- c(
+    "student_number",
+    "rdm_condition2",
+    "total_problems_complete",
+    "avg_problems_complete",
+    "total_time_mins",
+    "avg_time_mins"
+)
+colnames(fh2t)    
+
+fh2t$total_problems_complete_z_withinProgram <- scale(fh2t$total_problems_complete)
+fh2t$avg_problems_complete_z_withinProgram <- scale(fh2t$avg_problems_complete)
+fh2t$total_time_mins_z_withinProgram <- scale(fh2t$total_time_mins)
+fh2t$avg_time_mins_z_withinProgram <- scale(fh2t$avg_time_mins)
+
+
+```
+
+```{r, echo = FALSE, results = FALSE}
+
+# ASSITSments
+assist <- read.csv("ASSISTments_summary_merged_2021_04_23 - Sheet1.csv",
+                 na.strings = c("", "N/A"))
+colnames(assist)
+
+
+# time recalculation
+assist$sum_tot_recaclc <- ifelse((assist$started_assignment_2) == 0, 0, assist$sum_time_on_task_as2) +
+  ifelse((assist$started_assignment_3) == 0, 0, assist$sum_time_on_task_as3) +
+  ifelse((assist$started_assignment_4) == 0, 0, assist$sum_time_on_task_as4) +
+  ifelse((assist$started_assignment_5) == 0, 0, assist$sum_time_on_task_as5) +
+  ifelse((assist$started_assignment_7) == 0, 0, assist$sum_time_on_task_as7) +
+  ifelse((assist$started_assignment_8) == 0, 0, assist$sum_time_on_task_as8) +
+  ifelse((assist$started_assignment_9) == 0, 0, assist$sum_time_on_task_as9) +
+  ifelse((assist$started_assignment_10) == 0, 0, assist$sum_time_on_task_as10) +
+  ifelse((assist$started_assignment_11) == 0, 0, assist$sum_time_on_task_as11) 
+
+# check to make sure the calculations are the same when these isn't missing data -> YES
+cor(assist[is.na(assist$sum_time_on_task_o) ==F,]$sum_time_on_task_o,
+    assist[is.na(assist$sum_time_on_task_o) ==F,]$sum_tot_recaclc
+    ) # good
+
+table(is.na(assist$sum_tot_recaclc)) # still a lot of missing data :( -> 51.4% ?? seems really high
+
+# create average assignment times
+  # calculate numbers of assignment started
+  table(assist$started_assignment_2)
+  describe(assist$sum_time_on_task_as2)
+  # since we know that there are cases where the the started_assignment is NA and time on task is > 0, then I making the assumption that the # of assignment started is the include the sum of assignments that have either stated assignment = 1 or time > 0
+  assist$sum_started_assignments_o_recalac <- 
+        ifelse((assist$started_assignment_2) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as2) == F & assist$sum_time_on_task_as2 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_3) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as3) == F & assist$sum_time_on_task_as3 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_4) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as4) == F & assist$sum_time_on_task_as4 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_5) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as5) == F & assist$sum_time_on_task_as5 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_7) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as7) == F & assist$sum_time_on_task_as7 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_8) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as8) == F & assist$sum_time_on_task_as8 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_9) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as9) == F & assist$sum_time_on_task_as9 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_10) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as10) == F & assist$sum_time_on_task_as10 > 0, 1, 0)) +
+  ifelse((assist$started_assignment_11) == 1, 1, ifelse(is.na(assist$sum_time_on_task_as11) == F & assist$sum_time_on_task_as11 > 0, 1, 0)) 
+
+      
+  
+  table(assist$sum_started_assignments_o_recalac)
+  table(is.na(assist$sum_started_assignments_o_recalac))
+  table(is.na(assist$sum_started_assignments_o_recalac), is.na(assist$sum_tot_recaclc))
+  # there are no instances where we are missing the sum_started_assignments_o_recalac and we are not missing the sum of tot
+  
+  assist$sum_tot_Mins_recaclc <- assist$sum_tot_recaclc/(60) # inferring from the data dictionary that these are in secs
+  assist$avg_time_on_task_o_recalc <- assist$sum_tot_Mins_recaclc/assist$sum_started_assignments_o_recalac
+  
+
+
+## Problems complete recalculation
+
+assist$sum_completed_o_recalc <- 
+  ifelse((assist$started_assignment_2) == 0, 0, assist$sum_completed_as2) +
+  ifelse((assist$started_assignment_3) == 0, 0, assist$sum_completed_as3) +
+  ifelse((assist$started_assignment_4) == 0, 0, assist$sum_completed_as4) +
+  ifelse((assist$started_assignment_5) == 0, 0, assist$sum_completed_as5) +
+  ifelse((assist$started_assignment_7) == 0, 0, assist$sum_completed_as7) +
+  ifelse((assist$started_assignment_8) == 0, 0, assist$sum_completed_as8) +
+  ifelse((assist$started_assignment_9) == 0, 0, assist$sum_completed_as9) +
+  ifelse((assist$started_assignment_10) == 0, 0, assist$sum_completed_as10) +
+  ifelse((assist$started_assignment_11) == 0, 0, assist$sum_completed_as11) 
+
+table(is.na(assist$sum_completed_o_recalc)) #less missing data -> 48.4%
+
+
+assist$avg_completed_o_recalc <- assist$sum_completed_o_recalc/assist$sum_started_assignments_o_recalac
+
+# subset merge variables
+assist <- assist %>%
+  select(
+    student_number,
+    rdm_condition,
+    sum_completed_o_recalc,
+    avg_completed_o_recalc,
+    sum_tot_Mins_recaclc,
+    avg_time_on_task_o_recalc
+  ) 
+names(assist) <- c(
+    "student_number",
+    "rdm_condition2",
+    "total_problems_complete",
+    "avg_problems_complete",
+    "total_time_mins",
+    "avg_time_mins"
+)
+colnames(assist)    
+
+assist$total_problems_complete_z_withinProgram <- scale(assist$total_problems_complete)
+assist$avg_problems_complete_z_withinProgram <- scale(assist$avg_problems_complete)
+assist$total_time_mins_z_withinProgram <- scale(assist$total_time_mins)
+assist$avg_time_mins_z_withinProgram <- scale(assist$avg_time_mins)
+```
+
+## Merge
+```{r, echo = FALSE, results = FALSE}
+programData <- fh2t %>%
+  union(assist) 
+
+table(duplicated(programData$student_number)) # no dups!
+colnames(programData)
+
+#merge assessment and program data
+a_pd <- assess %>%
+  left_join(programData,
+            by = "student_number")
+
+#check data
+table(a_pd$rdm_condition, is.na(a_pd$rdm_condition2)) # only missing program rows for DB Condition!
+colnames(a_pd)
+rm(assess, assist, fh2t, programData)
+```
+
+# Time in Program
+``` {r, fig.show="hold", out.width="50%"}
+ggplot(
+  data = a_pd,
+  aes(x = avg_time_mins,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
+  xlim(0, 60) +
+  theme_minimal() +
+  labs(title = "Avg Session Time by Condition",
+       x = "Avg Minutes per Assignment") +
+  theme(plot.title = element_text(hjust = 0.5)
+        )
+
+
+ggplot(
+  data = a_pd,
+  aes(x = total_time_mins,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
+  xlim(0, 500) +
+  theme_minimal() +
+  labs(title = "Total Time by Condition",
+       x = "Total Minutes in Program") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+# Problems Complete 
+
+``` {r, fig.show="hold", out.width="50%"}
+ggplot(
+  data = a_pd,
+  aes(x = avg_problems_complete,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
+  xlim(0, 60) +
+  theme_minimal() +
+  labs(title = "Avg Problems per Session by Condition",
+       x = "Avg Problems per Assignment") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+ggplot(
+  data = a_pd,
+  aes(x = total_problems_complete,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
+  xlim(0, 500) +
+  theme_minimal() +
+  labs(title = "Total Problems Complete by Condition",
+       x = "Total Problems Complete") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+``` {r}
+ggplot(
+  data = a_pd,
+  aes(x = total_problems_complete_z_withinProgram,
+      fill = rdm_condition)) +
+  geom_density(adjust = 1.5, alpha = .7) +
+  xlim(-2.5,2.5) +
+  theme_minimal() +
+  labs(title = "Total Problems Complete by Condition (Standardized)",
+       x = "Total Problems Complete (Z-Score)") +
+  theme(plot.title = element_text(hjust = 0.5)
+        )
+# note that these z scores were created on the full sample of students who used each program (including conditions and schools dropped)
+```
+
+# Total Problems By Time in Porgram
+```{r, fig.show="hold", out.width="50%"}
+ggplot(
+  data = a_pd[a_pd$rdm_condition != "Dragon", ],
+  aes(x = total_problems_complete,
+      y = total_time_mins,
+      color = rdm_condition)) +
+  geom_point(alpha = .7) +
+   ylim(0, 500) +
+  #   xlim(-2, 3) +
+    geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal() +
+  labs(title = "Problems Complete By Time in Program",
+       x = "Total Problems Complete",
+       y = "Total Time ") +
+  theme(plot.title = element_text(hjust = 0.5)
+        )
+
+ggplot(
+  data = a_pd[a_pd$rdm_condition != "Dragon", ],
+  aes(x = total_problems_complete_z_withinProgram,
+      y = total_time_mins_z_withinProgram,
+      color = rdm_condition)) +
+  geom_point(alpha = .7) +
+  ylim(-2, 3) +
+    xlim(-2, 3) +
+    geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal() +
+  labs(title = "Problems Complete By Time in Program (Standardized)",
+       x = "Total Problems Complete (Z-Score)",
+       y = "Total Time (Z-Score)") +
+  theme(plot.title = element_text(hjust = 0.5)
+        )
+# note that these z scores were created on the full sample of students who used each program (incluing conditions and schools dropped)
+
+```
+
+## Multivariate Bi-Modal Distributions  
+```{r}
+ggplot(a_pd[a_pd$rdm_condition != "Dragon", ],
+  aes(x = fidelity_started_sum,
+      y = total_problems_complete_z_withinProgram,)) +
+  stat_density_2d() +
+    geom_point(alpha = .5, aes(color = rdm_condition))+
+    ylim(-2.5, 2.5) +
+    xlim(0,15) +
+  labs(title = "Problems Complete by Assignments Started (Standadized)",
+       x = "Assignments Started",
+       y = "Total Problems Complete (Z-score)",
+       color = "Condition") +
+    theme(plot.title = element_text(hjust = 0.5)
+        ) +
+  theme_minimal()
+```
+```{r}
+ggplot(a_pd[a_pd$rdm_condition != "Dragon", ],
+  aes(x = fidelity_started_sum,
+      y = total_problems_complete,)) +
+  stat_density_2d() +
+    geom_point(alpha = .5, aes(color = rdm_condition))+
+    ylim(0, 400) +
+    xlim(0,15) +
+  labs(title = "Problems Complete By Assignments Started",
+       x = "Assignments Started",
+       y = "Total Problems Complete",
+       color = "Condition") +
+  theme_minimal()
+```
+
+```{r, fig.show="hold", out.width="33%"}
+
+ggplot(a_pd[a_pd$rdm_condition == "FH2T", ],
+  aes(x = fidelity_started_sum,
+      y = total_problems_complete,)) +
+  stat_density_2d() +
+    geom_point(alpha = .5)+
+    ylim(0, 400) +
+    xlim(0,15) +
+  labs(title = "From Here to There",
+       x = "Assignments Started",
+       y = "Total Problems Complete") +
+  theme_minimal()
+
+ggplot(a_pd[a_pd$rdm_condition == "ASSISTments", ],
+  aes(x = fidelity_started_sum,
+      y = total_problems_complete,)) +
+  stat_density_2d() +
+    geom_point(alpha = .5)+
+    ylim(0, 400) +
+    xlim(0,15) +
+  labs(title = "ASSISTments",
+       x = "Assignments Started",
+       y = "Total Problems Complete") +
+  theme_minimal()
+
+ggplot(a_pd[a_pd$rdm_condition == "BAU", ],
+  aes(x = fidelity_started_sum,
+      y = total_problems_complete,)) +
+  stat_density_2d() +
+    geom_point(alpha = .5)+
+    ylim(0, 400) +
+    xlim(0,15) +
+  labs(title = "BAU",
+       x = "Assignments Started",
+       y = "Total Problems Complete") +
+  theme_minimal()
+```
+
+# Between School/Class Variance 
+```{r, fig.show="hold", out.width="50%"}
+### Variance in fidelity by school
+ggplot(
+  a_pd[is.na(a_pd$final_school_id) == F, ],
+  aes(x = final_school_id, 
+      y = total_time_mins,
+      grpup = rdm_condition,
+      fill = rdm_condition
+      )
+) +
+  labs(title ="Total Time by School and Condition",
+    #   subtitle = "10 students with time > 500 mins not shown",
+       y = "Total Minutes In Porgram") +
+  geom_boxplot(alpha = .7) +
+    ylim(0, 500) +
+  theme_minimal()
+
+
+ggplot(
+  a_pd[is.na(a_pd$final_school_id) == F, ],
+  aes(x = final_school_id, 
+      y = total_problems_complete,
+      grpup = rdm_condition,
+      fill = rdm_condition)
+) +
+  labs(title ="Problems Complete by School and Condition",
+    #   subtitle = "10 students with time > 500 mins not shown",
+       y = "Total Problems Complete  Porgram") +
+  geom_boxplot(alpha = .7) +
+ #   ylim(0, 500) +
+  theme_minimal()
+
+```
+
+
+
+
