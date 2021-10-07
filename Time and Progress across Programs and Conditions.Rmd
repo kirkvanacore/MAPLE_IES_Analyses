@@ -367,7 +367,7 @@ ggplot(a_pd[a_pd$rdm_condition == "ASSISTments", ],
   aes(x = fidelity_started_sum,
       y = total_problems_complete,)) +
   stat_density_2d() +
-    geom_point(alpha = .5)+
+    geom_point(alpha = .5)+ 
     ylim(0, 400) +
     xlim(0,15) +
   labs(title = "ASSISTments",
