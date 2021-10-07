@@ -161,7 +161,7 @@ aov(sum_completed_o_recalc ~ rdm_condition, data = assist))
 # From Here to There
 describe(scale(fh2t$o_distinct_completed))
 table(scale(fh2t$o_distinct_completed) > 2.5) # some outliers (10 above 2.5) 
-nrow(fh2t)*.005 #there should only be 5 student with a z score above 2.5
+nrow(fh2t)*.005 #there should only be 8 student with a z score above 2.5
 
 # ASSISTments
 describe(scale(assist$sum_completed_o_recalc))
@@ -228,7 +228,6 @@ ggplot(
 ```
 
 ## ICCs
-
 ```{r}
 # From Here to There
 # IntraClass Correlation
