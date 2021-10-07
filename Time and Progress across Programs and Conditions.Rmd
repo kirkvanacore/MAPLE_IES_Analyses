@@ -358,7 +358,7 @@ ggplot(a_pd[a_pd$rdm_condition == "FH2T", ],
     geom_point(alpha = .5)+
     ylim(0, 400) +
     xlim(0,15) +
-  labs(title = "From Here to There",
+  labs(title = "From Here to There", 
        x = "Assignments Started",
        y = "Total Problems Complete") +
   theme_minimal()
