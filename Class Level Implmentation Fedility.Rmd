@@ -33,9 +33,9 @@ ifnull <- function(x = NULL, alt = NULL){
 > Science  cannot  study  what  it  cannot  measure  accurately  and  cannot  measure  what  it  does  not  define (Durlak & DuPre, 2008).
 
 * Fidelity is using the program as it was intended
-* In this study parctitioners were expected to to assigning the online assignments and create time for students to utilize the program
-* Our working definition of minumim fedility is whether this expection was met
-* Because the action of assigning metrics was not measured directly, we utilize whether at least 25% students within a class started each assignment as our threshould for minimum fedility
+* In this study practitioners were expected to to assigning the online assignments and create time for students to utilize the program
+* Our working definition of minimum fidelity is whether this expectation was met
+* Because the action of assigning metrics was not measured directly, we utilize whether at least 25% students within a class started each assignment as our threshold for minimum fidelity
  
 
 
