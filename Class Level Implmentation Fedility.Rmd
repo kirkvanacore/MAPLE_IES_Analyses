@@ -1,0 +1,240 @@
+---
+title: "Class Level Fidelity"
+author: "Kirk Vanacore"
+date: "9/15/2021"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r, include=FALSE}
+require(psych)
+require(ggplot2) 
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(lme4)
+library(stringr)
+ifnull <- function(x = NULL, alt = NULL){
+  if(is.null(x)){
+    x <- alt
+  }
+  x
+}
+```
+
+# Fidelity Metric
+
+> Science  cannot  study  what  it  cannot  measure  accurately  and  cannot  measure  what  it  does  not  define (Durlak & DuPre, 2008).
+
+* Fidelity is using the program as it was intended
+* In this study parctitioners were expected to to assigning the online assignments and create time for students to utilize the program
+* Our working definition of minumim fedility is whether this expection was met
+* Because the action of assigning metrics was not measured directly, we utilize whether at least 25% students within a class started each assignment as our threshould for minimum fedility
+ 
+
+
+```{r, include=F, echo=F}
+assess <-read.csv("Assessment_merged_2021_07_16_state_assessment_N=4321 - Sheet1.csv", na.strings = c("", "N/A"))
+
+# Build Analytic Sample 
+  # schools who did not implement: S03 (for dropping before completing the pre-test) and S07 
+  # 
+table(assess$initial_school_id)
+table(assess$final_school_id)
+
+length(unique(assess$student_id)) # 4193
+table(is.na(assess$rdm_condition)) # 4092 original assigned to random treatment group
+table((assess$rdm_condition)) # 120 in resource 
+levels((assess$rdm_condition)) # 120 in resource 
+
+
+
+
+assess_clean <- assess %>%
+  filter(
+    # remove students who are not in original random assignment
+    is.na(assess$rdm_condition) == F   
+    # remove students who are in resource
+    & assess$rdm_condition != "Dragon-Resource" & assess$rdm_condition != "FH2T-Resource"   
+    # S03 drop schools 
+    & final_school_id != "S03" & initial_school_id != "S03"
+    & final_school_id != "S07" & initial_school_id != "S07"
+
+  )
+assess <- assess_clean
+rm(assess_clean)
+```
+
+## Class Level Fidelity Metrics
+```{r}
+# create data file with one row per class for fidelity metrics
+class <- assess %>%
+  ungroup() %>%
+  group_by(final_teacher_class, final_school_id) %>%
+  dplyr::summarise(num_students = n(),
+            num_started_assignment_2= sum(ifnull(started_assignment_2),0),
+            num_started_assignment_3= sum(ifnull(started_assignment_3),0),
+            num_started_assignment_4= sum(ifnull(started_assignment_4),0),
+            num_started_assignment_5= sum(ifnull(started_assignment_5),0),
+            num_started_assignment_7= sum(ifnull(started_assignment_7),0),
+            num_started_assignment_8= sum(ifnull(started_assignment_8),0),
+            num_started_assignment_9= sum(ifnull(started_assignment_9),0),
+            num_started_assignment_10= sum(ifnull(started_assignment_10),0),
+            num_started_assignment_11= sum(ifnull(started_assignment_11),0),
+            pre_started_assignment_2= mean(started_assignment_2),
+            pre_started_assignment_3= mean(started_assignment_3),
+            pre_started_assignment_4= mean(started_assignment_4),
+            pre_started_assignment_5= mean(started_assignment_5),
+            pre_started_assignment_7= mean(started_assignment_7),
+            pre_started_assignment_8= mean(started_assignment_8),
+            pre_started_assignment_9= mean(started_assignment_9),
+            pre_started_assignment_10= mean(started_assignment_10),
+            pre_started_assignment_11= mean(started_assignment_11)
+            ) %>%
+  mutate(
+    pre_assignments_started = 
+      (num_started_assignment_2 +
+      num_started_assignment_3 +
+      num_started_assignment_4 +
+      num_started_assignment_5 +
+      num_started_assignment_7 +
+      num_started_assignment_8 +
+      num_started_assignment_9 +
+      num_started_assignment_10 +
+      num_started_assignment_11 )/(num_students*9)
+  )
+
+```
+## Calculating Fedility Metric
+```{r}
+length(unique(class$final_teacher_class))
+table(class$num_students)
+# why are there classes with 56 students?
+# there are also 69 students without a final class id
+
+# overall percent students started lesson in class
+describe(class$pre_assignments_started)
+ggplot(
+  data = class,
+  aes(x = pre_assignments_started)) +
+  geom_density(adjust = 1.5, alpha = .7,  fill = "#00BFC4") +
+  theme_minimal() +
+  labs(title = "Avg Session Time by Condition",
+       x = "Avg Minutes per Assignment") +
+  theme(plot.title = element_text(hjust = 0.5)
+        ) +
+  geom_vline(xintercept=.25, 
+                color = "Blue", size=2)
+
+# number who met this metric
+table(class$pre_assignments_started > .25)
+
+
+# fidelity for each assignment
+class <- class %>%
+  mutate(a2_fedility = ifelse(pre_started_assignment_2 >.25, 1, 0),
+         a3_fedility = ifelse(pre_started_assignment_3 >.25, 1, 0),
+         a4_fedility = ifelse(pre_started_assignment_4 >.25, 1, 0),
+         a5_fedility = ifelse(pre_started_assignment_5 >.25, 1, 0),
+         a7_fedility = ifelse(pre_started_assignment_7 >.25, 1, 0),
+         a8_fedility = ifelse(pre_started_assignment_8 >.25, 1, 0),
+         a9_fedility = ifelse(pre_started_assignment_9 >.25, 1, 0),
+         a10_fedility = ifelse(pre_started_assignment_10 >.25, 1, 0),
+         a11_fedility = ifelse(pre_started_assignment_11 >.25, 1, 0),
+         )
+table(class$a2_fedility)
+table(class$a3_fedility)
+table(class$a4_fedility)
+table(class$a5_fedility)
+table(class$a7_fedility)
+table(class$a8_fedility)
+table(class$a9_fedility)
+table(class$a10_fedility)
+table(class$a11_fedility)
+      
+class$overall_fideility<-ifelse(
+      (class$a2_fedility) ==1&
+      (class$a3_fedility) ==1&
+      (class$a4_fedility) ==1&
+      (class$a5_fedility) ==1&
+      (class$a7_fedility) ==1& 
+      (class$a8_fedility) ==1& 
+      (class$a9_fedility) ==1& 
+      (class$a10_fedility) ==1&
+      (class$a11_fedility) ==1, 1, 0)
+table(class$overall_fideility, class$pre_assignments_started > .25)
+table(is.na(class$overall_fideility))
+table(is.na(class$overall_fideility))
+
+mean(class$a2_fedility, na.rm = T)
+mean(class$a3_fedility, na.rm = T)
+mean(class$a4_fedility, na.rm = T)
+mean(class$a5_fedility, na.rm = T)
+mean(class$a7_fedility, na.rm = T)
+mean(class$a8_fedility, na.rm = T)
+mean(class$a9_fedility, na.rm = T)
+mean(class$a10_fedility, na.rm = T)
+mean(class$a11_fedility, na.rm = T)
+
+assess <- assess %>%
+  left_join(
+    class %>%
+      select(
+        final_teacher_class, 
+        final_school_id,
+        overall_fideility,
+        pre_assignments_started
+      ),
+    by = c("final_school_id", "final_teacher_class")
+  )
+
+# there is almost of missing data here
+table(is.na(assess$overall_fideility))
+table(is.na(assess$post.percentage_math_score),is.na(assess$overall_fideility))
+table(is.na(assess$pre.percentage_math_score),is.na(assess$overall_fideility))
+```
+
+## Pretest Scores by Fidelity 
+```{r}
+ggplot(
+  assess[is.na(assess$post.percentage_math_score) == F &
+           is.na(assess$overall_fideility) == F, ],
+  aes(x =  as.factor(overall_fideility), 
+      y = pre.percentage_math_score,
+      group = overall_fideility,
+      
+      )
+) +
+  labs(title ="Pre Test Scores by Fideility",
+    #   subtitle = "",
+       y = "Pretest Score",
+       x = "Class Level Fidelity ") +
+  geom_boxplot(alpha = .7) +
+  theme_minimal()
+
+ggplot(
+  assess[is.na(assess$post.percentage_math_score) == F &
+           is.na(assess$overall_fideility) == F, ],
+  aes(x = as.factor(overall_fideility), 
+      y = pre.percentage_math_score,
+  #    grpup = as.factor(virtual),
+      fill = as.factor(virtual)
+      
+      )
+) +
+  labs(title ="Pre Test Scores by Fideility",
+    #   subtitle = "",
+       y = "Pretest Score",
+       x = "Class Level Fidelity ") +
+  geom_boxplot(alpha = .7) +
+  theme_minimal()
+
+
+```
+
